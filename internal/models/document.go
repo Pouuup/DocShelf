@@ -4,8 +4,8 @@ import "time"
 
 type Document struct {
 	Title       string
-	SourceURL   string
+	Source_URL  string
 	Description string
-	ImportedAt  time.Time
-	UpdatedAt   time.Time
+	Imported_At time.Time
+	Updated_At  time.Time
 }
