@@ -11,7 +11,7 @@ import (
 	"github.com/Poup-puoP/DocShelf/internal/models"
 )
 
-func SaveData(document *models.Document, pathStorage string, pathDirDoc string) error {
+func Save(document *models.Document, pathStorage string, pathDirDoc string) error {
 	if document == nil {
 		return fmt.Errorf("error: the document is empty")
 	}
