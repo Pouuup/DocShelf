@@ -34,22 +34,34 @@ func downloadHTML(url string) ([]byte, error) {
 }
 
 func extractTitle(htmlData []byte) (string, error) {
-	if htmlData == nil {
-		return "", fmt.Errorf("Error: HTML is empty")
+	if len(htmlData) == 0 {
+		return "", fmt.Errorf("HTML is empty")
 	}
 
 	reader := bytes.NewReader(htmlData)
 
 	root, err := html.Parse(reader)
 	if err != nil {
-		return "", fmt.Errorf("Error during parsing")
+		return "", fmt.Errorf("%w", err)
 	}
 
-	findTitle(root)
+	title := findTitle(root)
+	if title == nil {
+		return "", fmt.Errorf("Title not found")
+	}
+
+	if title.FirstChild == nil {
+		return "", fmt.Errorf("Title is empty")
+	}
+	if title.FirstChild.Data == "" {
+		return "", fmt.Errorf("Title is empty")
+	}
+
+	return title.FirstChild.Data, nil
 
 }
 
-func findTitle(node *html.Node) *html.Node{
+func findTitle(node *html.Node) *html.Node {
 	if node == nil {
 		return node
 	}
@@ -70,3 +82,4 @@ func findTitle(node *html.Node) *html.Node{
 
 	return nil
 }
+
