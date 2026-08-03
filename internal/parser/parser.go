@@ -7,8 +7,56 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Poup-puoP/DocShelf/internal/models"
+
 	"golang.org/x/net/html"
+	
 )
+
+
+func ParseDocument(url string) (models.Document, error) {
+	htmlData, err := downloadHTML(url)
+	if err != nil {
+		return models.Document{}, fmt.Errorf("%w", err)
+	}
+
+	title, err := extractTitle(htmlData)
+	if err != nil {
+		return models.Document{}, fmt.Errorf("%w", err)
+	}
+
+	body, err := extractBody(htmlData)
+	if err != nil {
+		return models.Document{}, fmt.Errorf("%w", err)
+	}
+	
+	headings := extractHeadings(body)
+
+	text := extractText(body)
+	var headerTexts []string
+
+	for _, head := range headings {
+		val := extractText(head)
+		headerTexts = append(headerTexts, val)
+	} 
+	
+	section := models.Section {
+		Title: title,
+		Text: text,
+		InternalHeaders: headerTexts,
+	}
+	
+	document := models.Document{
+		Title: title,
+		SourceURL: url,
+		Sections: []models.Section{section},
+		ImportedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	return document, nil
+
+}
 
 func downloadHTML(url string) ([]byte, error) {
 	var html []byte
@@ -148,4 +196,23 @@ func extractHeadings(body *html.Node) []*html.Node {
 	}
 
 	return headings
+}
+
+func extractText(text *html.Node) string {
+	if text == nil {
+		return ""
+	}
+
+	if text.Type == html.TextNode {
+		return text.Data
+	}
+
+	totalText := ""
+
+	for child := text.FirstChild; child != nil; child = child.NextSibling {
+		childText := extractText(child)
+		totalText += childText
+	}
+
+	return totalText
 }

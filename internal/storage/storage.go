@@ -15,7 +15,7 @@ func Save(document *models.Document, pathStorage string, pathDirDoc string) erro
 	if document == nil {
 		return fmt.Errorf("error: the document is empty")
 	}
-	exist, err := ExistsByURL(pathStorage, document.Source_URL)
+	exist, err := ExistsByURL(pathStorage, document.SourceURL)
 	if err != nil {
 		return fmt.Errorf("error:%w", err)
 	}
@@ -88,6 +88,8 @@ func ExistsByURL(pathDir string, url string) (bool, error) {
 
 	return false, err
 }
+
+func Update() {}
 
 func Load(pathDocument string) (models.Document, error) {
 	var document models.Document
