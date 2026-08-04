@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/Poup-puoP/DocShelf/internal/models"
 )
@@ -28,6 +29,7 @@ func Save(document *models.Document, pathStorage string, pathDirDoc string) erro
 	if err != nil {
 		return fmt.Errorf("error:%w", err)
 	}
+
 	pathDocument := filepath.Join(pathDirDoc, "document.json")
 	file, err := os.Create(pathDocument)
 	if err != nil {
@@ -89,7 +91,47 @@ func ExistsByURL(pathDir string, url string) (bool, error) {
 	return false, err
 }
 
-func Update() {}
+func Update(document *models.Document, pathStorage string, pathDirDoc string) error {
+	if document == nil {
+		return fmt.Errorf("error: the document is empty")
+	}
+
+	exist, err := ExistsByURL(pathStorage, document.SourceURL)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	if !exist {
+		return nil
+	}
+	doc := filepath.Join(pathDirDoc, "document.json")
+
+	data, err := os.ReadFile(doc)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	var oldDocument models.Document
+
+	err = json.Unmarshal(data, &oldDocument)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	document.ImportedAt = oldDocument.ImportedAt
+	document.UpdatedAt = time.Now()
+
+	str, err := json.Marshal(document)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	err = os.WriteFile(doc, str, 0644)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
+}
 
 func Load(pathDocument string) (models.Document, error) {
 	var document models.Document
