@@ -66,7 +66,7 @@ func ExistsByURL(pathDir string, url string) (bool, error) {
 			}
 
 			var doc struct {
-				URL string `json:"Source_URL"`
+				URL string `json:"SourceURL"`
 			}
 
 			err = json.NewDecoder(file).Decode(&doc)
@@ -121,7 +121,7 @@ func Update(document *models.Document, pathStorage string, pathDirDoc string) er
 	document.ImportedAt = oldDocument.ImportedAt
 	document.UpdatedAt = time.Now()
 
-	str, err := json.Marshal(document)
+	str, err := json.MarshalIndent(document, "", "	")
 	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
