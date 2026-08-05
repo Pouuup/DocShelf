@@ -10,9 +10,7 @@ import (
 	"github.com/Poup-puoP/DocShelf/internal/models"
 
 	"golang.org/x/net/html"
-	
 )
-
 
 func ParseDocument(url string) (models.Document, error) {
 	htmlData, err := downloadHTML(url)
@@ -29,29 +27,15 @@ func ParseDocument(url string) (models.Document, error) {
 	if err != nil {
 		return models.Document{}, fmt.Errorf("%w", err)
 	}
-	
-	headings := extractHeadings(body)
 
-	text := extractText(body)
-	var headerTexts []string
+	sections := parseSections(body)
 
-	for _, head := range headings {
-		val := extractText(head)
-		headerTexts = append(headerTexts, val)
-	} 
-	
-	section := models.Section {
-		Title: title,
-		Text: text,
-		InternalHeaders: headerTexts,
-	}
-	
 	document := models.Document{
-		Title: title,
-		SourceURL: url,
-		Sections: []models.Section{section},
+		Title:      title,
+		SourceURL:  url,
+		Sections:   sections,
 		ImportedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 
 	return document, nil
@@ -177,25 +161,43 @@ func findBody(node *html.Node) *html.Node {
 	return nil
 }
 
-func extractHeadings(body *html.Node) []*html.Node {
-	headings := make([]*html.Node, 0)
-	if body == nil {
-		return headings
+func buildSections(node *html.Node, section *[]models.Section, currentSections *models.Section) {
+
+	if node == nil {
+		return
 	}
 
-	if body.Type == html.ElementNode {
-		if body.Data == "h1" || body.Data == "h2" || body.Data == "h3" || body.Data == "h4" || body.Data == "h5" || body.Data == "h6" {
-			headings = append(headings, body)
+	if node.Type == html.ElementNode {
+		if node.Data == "h2" {
+			title := extractText(node)
+			if currentSections.Title != "" {
+				*section = append(*section, *currentSections)
+			}
+			*currentSections = models.Section{}
+			currentSections.Title = title
+		}
+
+		if node.Data == "p" {
+			text := extractText(node)
+			currentSections.Text += text + "\n"
 		}
 	}
 
-	for child := body.FirstChild; child != nil; child = child.NextSibling {
-		childHeadings := extractHeadings(child)
-		headings = append(headings, childHeadings...)
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+		buildSections(child, section, currentSections)
 
 	}
+}
 
-	return headings
+func parseSections(node *html.Node) []models.Section {
+	sections := []models.Section{}
+	currentSection := models.Section{}
+
+	buildSections(node, &sections, &currentSection)
+	if currentSection.Title != "" {
+		sections = append(sections, currentSection)
+	}
+	return sections
 }
 
 func extractText(text *html.Node) string {
