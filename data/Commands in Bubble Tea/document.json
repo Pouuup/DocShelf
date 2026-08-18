@@ -1,0 +1,63 @@
+{
+	"Title": "Commands in Bubble Tea",
+	"SourceURL": "https://charm.land/blog/commands-in-bubbletea/",
+	"Sections": [
+		{
+			"Title": "Rules of thumb",
+			"Text": "There three things to keep in mind with regard to asynchronous stuff in Bubble Tea:\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "The basics",
+			"Text": "Okay, so how would we write our own commands?\nA Cmd is simply an alias for func() tea.Msg, so it’s just a function that\nreturns a message. A command could be something as simple as:\nBut how would you respond to such a command? You’d match on it in your update\nmethod.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Multiple commands",
+			"Text": "Sometimes you want to fire off more than one command at once. For that, use\ntea.Batch.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Commands with arguments",
+			"Text": "Okay, so what if you want to make a command that takes an argument? Since Cmd\nis a func() tea.Msg, it can’t take an argument. So what do you do in that\ncase? Well, you make a function that returns a command.\nIn your Update function it would look something like this:\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Initial commands",
+			"Text": "Sometimes you’ll want to fire off a command right as your Bubble Tea program\nstarts without waiting for user input. For that, use Model.Init:\nOr, for multiple commands:\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "APIs calls from Bubble Tea",
+			"Text": "A lot of the time you’ll want to make API calls from Bubble Tea. Commands are\ngreat for this.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Injecting messages from outside the program",
+			"Text": "Commands work great from within a Bubble Tea program, but what if you want to send\nmessages to Update from outside the program? Enter\nProgram.Send().\nIt’s as simple as p.Send(someMsg{}):\nFor details check out the\nfull example and\nProgram.Send in the docs.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Still have questions?",
+			"Text": "Let us know in Discord or in GitHub Discussions.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Learn More",
+			"Text": "EOF\nRead this post in your terminal with Glow:\nBy Bashbunni\n21 March 2023\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Tail the logs.",
+			"Text": "Keep up with Charm and get access to our alphas, betas, experimental projects and stuff like that. We’re always building stuff and love getting feedback from talented people like you.\n",
+			"InternalHeaders": null
+		},
+		{
+			"Title": "Let’s chat!",
+			"Text": "Have a question about a command line thing you’re building? Got an idea for a new feature? Just wanna hang out? You’re always welcome in the Charm Discord.\nCopyright © 2026 Charmbracelet, Inc.\nhaters \u003e /dev/null™\n",
+			"InternalHeaders": null
+		}
+	],
+	"ImportedAt": "2026-08-15T21:02:16.501139136+03:00",
+	"UpdatedAt": "2026-08-15T21:02:16.501139331+03:00"
+}

@@ -7,11 +7,12 @@ import (
 )
 
 func main() {
-	url := "https://go.dev/doc/"
+	url := ""
 	pathStorage := "data"
 	err := app.ImportDocument(url, pathStorage)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Println("Document was successfully imported")
 	}
-	fmt.Println("Document was successfully imported")
 }

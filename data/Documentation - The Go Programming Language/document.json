@@ -9,7 +9,7 @@
 		},
 		{
 			"Title": "Using and understanding Go",
-			"Text": "\nA document that gives tips for writing clear, idiomatic Go code.\nA must read for any new Go programmer. It augments the tour and\nthe language specification, both of which should be read first.\n\n\nAnswers to common questions about Go.\n\n\nA document that summarizes commonly used editor plugins and IDEs with\nGo support.\n\n\nSummarizes tools and methodologies to diagnose problems in Go programs.\n\n\nA document that describes how Go manages memory, and how to make the most of it.\n\n\nWhen your code uses external packages, those packages (distributed as modules) become dependencies.\n\n\nMain documentation page for Go fuzzing.\n\n\nMain documentation page for coverage testing of Go applications.\n\n\nMain documentation page for profile-guided optimization (PGO) of Go applications.\n\n",
+			"Text": "\nA document that gives tips for writing clear, idiomatic Go code.\nA must read for any new Go programmer. It augments the tour and\nthe language specification, both of which should be read first.\n\n\nAnswers to common questions about Go.\n\n\nA document that summarizes commonly used editor plugins and IDEs with\nGo support.\n\n\nSummarizes tools and methodologies to diagnose problems in Go programs.\n\n\nA document that describes how Go manages memory, and how to make the most of it.\n\n\nWhen your code uses external packages, those packages (distributed as modules) become dependencies.\n\n\nMain documentation page for Go fuzzing.\n\n\nMain documentation page for coverage testing of Go applications.\n\n\nMain documentation page for profile-guided optimization (PGO) of Go applications.\n\n\nGuide for safe step-by-step migration from encoding/json to encoding/json/v2.\n\n",
 			"InternalHeaders": null
 		},
 		{
@@ -49,5 +49,5 @@
 		}
 	],
 	"ImportedAt": "2026-08-06T01:34:13.46237703+03:00",
-	"UpdatedAt": "2026-08-06T01:34:13.462377231+03:00"
+	"UpdatedAt": "2026-08-15T20:55:02.916393387+03:00"
 }
