@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	url := "https://charm.land/blog/commands-in-bubbletea/"
+	url := "https://habr.com/ru/articles/881014/"
 	pathStorage := "data"
 	err := app.ImportDocument(url, pathStorage)
 	if err != nil {
@@ -23,6 +23,7 @@ func main() {
 	document, err := parser.ParseDocument(url)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 
 	m := tui.NewModel(document)

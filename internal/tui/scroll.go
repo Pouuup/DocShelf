@@ -7,7 +7,7 @@ func (m model) maxPosition() int {
 		m.document.Sections[m.currentSection].Text,
 		"\n",
 	)
-	pageSize := m.height - 1
+	pageSize := m.height - 4
 	if len(lines) <= pageSize {
 		return 0
 	}
