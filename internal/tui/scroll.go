@@ -1,13 +1,17 @@
 package tui
 
-import "strings"
-
 func (m model) maxPosition() int {
-	lines := strings.Split(
+	lines := WrapText(
 		m.document.Sections[m.currentSection].Text,
-		"\n",
+		m.width,
 	)
-	pageSize := m.height - 4
+
+	pageSize := m.height - 5
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
 	if len(lines) <= pageSize {
 		return 0
 	}

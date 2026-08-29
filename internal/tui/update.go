@@ -31,6 +31,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.currentSection--
 				m.position = 0
 			}
+		case "home":
+			m.position = 0
+		case "end":
+			m.position = m.maxPosition()
 		}
 	}
 	return m, nil
