@@ -1,10 +1,7 @@
 package tui
 
 func (m model) maxPosition() int {
-	lines := WrapText(
-		m.document.Sections[m.currentSection].Text,
-		m.width,
-	)
+	lines := m.contentLines()
 
 	pageSize := m.height - 5
 

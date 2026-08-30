@@ -20,10 +20,7 @@ func (m model) View() string {
 	progresSection := "[" + strconv.Itoa(m.currentSection+1) + "/" + strconv.Itoa(totalSections) + "]"
 	title := m.document.Sections[m.currentSection].Title + "                                                                " + progresSection
 
-	lines := WrapText(
-		m.document.Sections[m.currentSection].Text,
-		m.width,
-	)
+	lines := m.contentLines()
 
 	pageSize := m.height - 5 // How many lines can fit on the screen
 

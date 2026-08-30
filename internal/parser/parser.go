@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/Poup-puoP/DocShelf/internal/models"
-
-	"golang.org/x/net/html"
+	"github.com/PuerkitoBio/goquery"
 )
 
 func ParseDocument(url string) (models.Document, error) {
@@ -18,17 +17,25 @@ func ParseDocument(url string) (models.Document, error) {
 		return models.Document{}, fmt.Errorf("%w", err)
 	}
 
-	title, err := extractTitle(htmlData)
+	documents, err := parseHTML(htmlData)
 	if err != nil {
 		return models.Document{}, fmt.Errorf("%w", err)
 	}
 
-	body, err := extractBody(htmlData)
+	title, err := extractTitle(documents)
 	if err != nil {
 		return models.Document{}, fmt.Errorf("%w", err)
 	}
 
-	sections := parseSections(body)
+	body, err := extractBody(documents)
+	if err != nil {
+		return models.Document{}, fmt.Errorf("%w", err)
+	}
+
+	sections, err := parseSections(body)
+	if err != nil {
+		return models.Document{}, fmt.Errorf("%w", err)
+	}
 
 	document := models.Document{
 		Title:      title,
@@ -70,151 +77,61 @@ func downloadHTML(url string) ([]byte, error) {
 	return html, nil
 }
 
-func extractTitle(htmlData []byte) (string, error) {
-	if len(htmlData) == 0 {
-		return "", fmt.Errorf("HTML is empty")
+func extractTitle(document *goquery.Document) (string, error) {
+	selection := document.Find("title").First()
+	if selection.Length() == 0 {
+		return "", fmt.Errorf("title not found")
 	}
 
-	reader := bytes.NewReader(htmlData)
-
-	root, err := html.Parse(reader)
-	if err != nil {
-		return "", fmt.Errorf("%w", err)
-	}
-
-	title := findTitle(root)
-	if title == nil {
-		return "", fmt.Errorf("Title not found")
-	}
-
-	if title.FirstChild == nil {
-		return "", fmt.Errorf("Title is empty")
-	}
-	if title.FirstChild.Data == "" {
-		return "", fmt.Errorf("Title is empty")
-	}
-
-	return title.FirstChild.Data, nil
-
+	return selection.Text(), nil
 }
 
-func findTitle(node *html.Node) *html.Node {
-	if node == nil {
-		return node
-	}
-	if node.Type == html.ElementNode {
-		if node.Data == "title" {
-			return node
-		}
+func extractBody(document *goquery.Document) (*goquery.Selection, error) {
+	selection := document.Find("body").First()
+	if selection.Length() == 0 {
+		return nil, fmt.Errorf("body not found")
 	}
 
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-
-		find := findTitle(child)
-		if find != nil {
-			return find
-		}
-
-	}
-
-	return nil
+	return selection, nil
 }
 
-func extractBody(htmlData []byte) (*html.Node, error) {
-	if len(htmlData) == 0 {
-		return nil, fmt.Errorf("HTML is empty")
-	}
-
-	reader := bytes.NewReader(htmlData)
-
-	root, err := html.Parse(reader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	body := findBody(root)
-	if body == nil {
-		return nil, fmt.Errorf("Body not found")
-	}
-
-	return body, nil
-
-}
-
-func findBody(node *html.Node) *html.Node {
-	if node == nil {
-		return node
-	}
-	if node.Type == html.ElementNode {
-		if node.Data == "body" {
-			return node
-		}
-	}
-
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		find := findBody(child)
-		if find != nil {
-			return find
-		}
-	}
-
-	return nil
-}
-
-func buildSections(node *html.Node, section *[]models.Section, currentSections *models.Section) {
-
-	if node == nil {
-		return
-	}
-
-	if node.Type == html.ElementNode {
-		if node.Data == "h2" {
-			title := extractText(node)
-			if currentSections.Title != "" {
-				*section = append(*section, *currentSections)
-			}
-			*currentSections = models.Section{}
-			currentSections.Title = title
-		}
-
-		if node.Data == "p" {
-			text := extractText(node)
-			currentSections.Text += text + "\n"
-		}
-	}
-
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		buildSections(child, section, currentSections)
-
-	}
-}
-
-func parseSections(node *html.Node) []models.Section {
+func parseSections(body *goquery.Selection) ([]models.Section, error) {
 	sections := []models.Section{}
-	currentSection := models.Section{}
 
-	buildSections(node, &sections, &currentSection)
-	if currentSection.Title != "" {
-		sections = append(sections, currentSection)
+	selection := body.Find("h2").Each(func(i int, s *goquery.Selection) {
+		section := models.Section{
+			Title: s.Text(),
+		}
+		elements := s.NextUntil("h2")
+		paragraphs := elements.Find("p")
+
+		paragraphs.Each(func(i int, p *goquery.Selection) {
+			block := models.Block{
+				Type: models.BlockParagraph,
+				Text: p.Text(),
+			}
+			section.Blocks = append(section.Blocks, block)
+
+		})
+
+		sections = append(sections, section)
+
+	})
+
+	if selection.Length() == 0 {
+		return nil, fmt.Errorf("no sections found")
 	}
-	return sections
+
+	return sections, nil
+
 }
 
-func extractText(text *html.Node) string {
-	if text == nil {
-		return ""
+func parseHTML(htmlData []byte) (*goquery.Document, error) {
+	reader := bytes.NewReader(htmlData)
+	document, err := goquery.NewDocumentFromReader(reader)
+	if err != nil {
+		return nil, err
 	}
 
-	if text.Type == html.TextNode {
-		return text.Data
-	}
-
-	totalText := ""
-
-	for child := text.FirstChild; child != nil; child = child.NextSibling {
-		childText := extractText(child)
-		totalText += childText
-	}
-
-	return totalText
+	return document, nil
 }
