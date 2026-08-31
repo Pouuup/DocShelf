@@ -7,27 +7,63 @@
 			"Blocks": [
 				{
 					"Type": "paragraph",
-					"Text": "важно: перед вызовом функции используется `go`"
+					"Text": "Давайте начнем с простой программы для загрузки нескольких файлов."
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    // Simulate file download with sleep\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    startTime := time.Now()\n\n    downloadFile(\"file1.txt\")\n    downloadFile(\"file2.txt\")\n    downloadFile(\"file3.txt\")\n\n    elapsedTime := time.Since(startTime)\n\n    fmt.Printf(\"All downloads completed! Time elapsed: %s\\n\", elapsedTime)\n\n// Starting downloads...\n// Starting download: filel.txt\n// Finished download: filel.txt\n// Starting download: file2.txt\n// Finished download: file2.txt\n// Starting download: file3.txt\n// Finished download: file3.txt\n// All downloads completed! Time elapsed: 6s\n// Program exited."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Все горутины зависят от функции main"
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Важно понимать: Функци main по сути та же горутина. "
+					"Text": "Выполнение заняло 6 секунд, каждый вызов downloadFile должен завершиться прежде чем начнется следующий. Давайте наглядно: "
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Подождать несколько секунд(костыль)"
+					"Text": "Мы можем снизить это время, давай внесем изменения в код, добавим горутины: "
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    // Simulate file download with sleep\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    // Launch downloads concurrently\n    go downloadFile(\"file1.txt\")\n    go downloadFile(\"file2.txt\")\n    go downloadFile(\"file3.txt\")\n\n    fmt.Println(\"All downloads completed!\")\n}\n\n// Starting downloads...\n// All downloads completed!\n// Program exited."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Использовать WaitGroup (правильный способ, о нем дальше)"
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Используем каналы (о них дальше)"
+					"Text": "Погоди, ничего не напечаталось, как считаешь почему?"
+				},
+				{
+					"Type": "paragraph",
+					"Text": "Давай наглядно."
+				},
+				{
+					"Type": "paragraph",
+					"Text": "Мы понимаем, что функция main завершилась ДО того как отработал горутины. Первый вывод: "
+				},
+				{
+					"Type": "paragraph",
+					"Text": "Чтобы исправить ситуацию нам нужно, чтобы main дождалась окончания работы горутин. Сделать мы это можем несколькими путями:"
+				},
+				{
+					"Type": "paragraph",
+					"Text": "Подождем несколько. секунд чтобы горутины завершились."
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    // Simulate file download with sleep\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    startTime := time.Now() // Record start time\n\n    go downloadFile(\"file1.txt\")\n    go downloadFile(\"file2.txt\")\n    go downloadFile(\"file3.txt\")\n\n    // Ожидаем завершения горутин\n    time.Sleep(3 * time.Second)\n\n    elapsedTime := time.Since(startTime)\n\n    fmt.Printf(\"All downloads completed! Time elapsed: %s\\n\", elapsedTime)"
+				},
+				{
+					"Type": "paragraph",
+					"Text": "тык"
+				},
+				{
+					"Type": "paragraph",
+					"Text": "Проблема тут в том, что мы  можем не знать сколько времени горутине необходимо на выполнение задачи. В нашем случае время константно, но мы не будем знать его в реальных кейсах. "
 				}
 			]
 		},
@@ -36,458 +72,121 @@
 			"Blocks": [
 				{
 					"Type": "paragraph",
-					"Text": "WaitGroup инициализирует внутренний счетчик"
+					"Text": "Для управления конкурентностью в го применяется `sync.WaitGroup`, благодаря wg можно ожидать завершение горутин. "
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"sync\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, wg *sync.WaitGroup) {\n    // Сообщим wg о том что мы закончили перед выходом из функции\n    defer wg.Done()\n\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    var wg sync.WaitGroup\n\n    // Сообщим wg что мы собираемся запускать 3 горутины\n    wg.Add(3)\n\n    go downloadFile(\"file1.txt\", \u0026wg)\n    go downloadFile(\"file2.txt\", \u0026wg)\n    go downloadFile(\"file3.txt\", \u0026wg)\n\n    // Ждем завершения всех горутин\n    wg.Wait()\n\n    fmt.Println(\"All downloads completed!\")\n}\n\n// Starting downloads...\n// Starting download: file3.txt\n// Starting download: filel.txt\n// Starting download: file2.txt\n// Finished download: file3.txt\n// Finished download: filel.txt\n// Finished download: file2.txt\n// All downloads completed!\n// Program exited."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "wg.Add(n) увеличивает счетчик на n "
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "wg.Done() уменьшает счетчик на 1 "
+					"Text": "Теперь наглядно:"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "wg.Wait() блокирует main до тех пор пока счетчик не станет 0 "
+					"Text": "Мы немного разобрались как горутины работают. Теперь узнаем как две горутины взаимодействуют. Пришло время узнать про каналы."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "main вызывает add(3) до запуска горутин"
+					"Text": "вот некоторые свойства каналов "
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    // создаем канал\n    ch := make(chan string)\n\n    // Отправляем данные в канал(main блокируется)\n    ch \u003c- \"hello\"  // тут deadlock!\n\n    // получение данных из канала\n    msg := \u003c-ch\n    fmt.Println(msg)\n}\n//fatal error: all goroutines are asleep - deadlock!\n//goroutine 1 [chan send]:\n//main.main ()\n// / tmp/sandbox364224576/prog.go: 10 +0x36\n//Program exited."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Каждая горутина вызывает Done() по завершению функции (defer wg.Done()) "
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "main блокируется до тех пор пока счетчик wait() не станет 0"
+					"Text": "почему произошел дедлок в ch \u003c- \"hello\" ? Поскольку каналы это механизмы блокировки/синхронизации запись в канал заблокирует выполнение main до тех пор пока другая горутина не прочтет из него, но другой горутины нет и мы заблокировались навсегда - deadlock. "
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Когда счетчик становится равным 0, блокировка main снимается и программа может завершаться"
+					"Text": "Необходимо это исправить"
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    ch := make(chan string)\n\n    // создадим горутину для записи в канал\n    go func() {\n        ch \u003c- \"hello\"  // в этот раз блокировки не будет main тоже горутина\n    }()\n\n    // main прочитает данные \n    msg := \u003c-ch  // блокировка до момента чтения\n    fmt.Println(msg)\n}"
 				},
 				{
 					"Type": "paragraph",
-					"Text": ""
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Каналы это мощные примитивы взаимодействия между горутинами предоставляющий возможность безопасного обмена данными."
+					"Text": "На этот раз благодаря другой горутине, main горутина не заблокировалась и смогла прочесть сообщение из канала, но горутина записавшая данные в канал была заблокирована, пока main не прочел данные из канала (то есть горутины синхронизировались)"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Представь что каналы это \"трубы\": одна горутина может послать данные в эту трубу и другая горутина сможет эти данные из нее забрать."
+					"Text": "Исправим проблему связанную с тем, что main не дожидался завершения остальных горутин, воспользуемся новыми знаниями. "
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, done chan bool) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n\n    done \u003c- true // отправляем сигнал о завершении\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    startTime := time.Now()\n\n    // создаем канал для отслеживания статуса горутин\n    done := make(chan bool)\n\n    go downloadFile(\"file1.txt\", done)\n    go downloadFile(\"file2.txt\", done)\n    go downloadFile(\"file3.txt\", done)\n\n    // Ждем пока все горутины сигнализируют о закрытии\n    for i := 0; i \u003c 3; i++ {\n        \u003c-done // Получаем сигнал от каждой завершенной горутины \n    }\n\n    elapsedTime := time.Since(startTime)\n    fmt.Printf(\"All downloads completed! Time elapsed: %s\\n\", elapsedTime)\n}\n\n//Starting downloads...\n//Starting download: file3.txt\n//Starting download: file2.txt\n//Starting download: filel.txt\n//Finished download: filel.txt\n//Finished download: file2.txt\n//Finished download: file3.txt\n//All downloads completed! Time elapsed: 2s\n//Program"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Каналы это блокировки по своей сути "
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Запись в канал ch \u003c- value  блокирует main пока другая горутина не прочтет из канала ."
+					"Text": "можно потыкаться, и предсказать что будет если изменить значение в цикле с 3 на 2."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Чтение из канала \u003c-ch блокирует main пока другая горутина не запишет из канала."
+					"Text": "Теперь разберем."
 				},
 				{
 					"Type": "paragraph",
-					"Text": "main создает канал done"
+					"Text": "Мы уже наблюдали как горутины общаются между собой. Ведь main это тоже горутина!"
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc sender(ch chan string, done chan bool) {\n    for i := 1; i \u003c= 3; i++ {\n        ch \u003c- fmt.Sprintf(\"message %d\", i)\n        time.Sleep(100 * time.Millisecond)\n    }\n    close(ch) // Закрываем канал после завершения отправки\n    done \u003c- true\n}\n\nfunc receiver(ch chan string, done chan bool) {\n        // range позволяет читать канал пока он не закроется(главное его закрыть)\n    for msg := range ch {\n        fmt.Println(\"Received:\", msg)\n    }\n    done \u003c- true\n}\n\nfunc main() {\n    ch := make(chan string)\n    senderDone := make(chan bool)\n    receiverDone := make(chan bool)\n\n    go sender(ch, senderDone)\n    go receiver(ch, receiverDone)\n\n    // блокируемся до тех пор пока не отработают функции\n    \u003c-senderDone\n    \u003c-receiverDone\n\n    fmt.Println(\"All operations completed!\")\n}"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "запуск функции в трех горутинах"
+					"Text": "потыкать код"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "каждая горутина получает ссылку на один и тот же канал"
+					"Text": "Небуферизированные каналы блокируют как отправителя, так и получателя, пока другая сторона не будет готова. когда требуется высокочастотная передача данных, небуферизированные каналы могут стать узким местом, поскольку обе горутины вынуждены простаивать для обмена данными."
+				},
+				{
+					"Type": "code",
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc main() {\n    // создали буфф канал вместимостью 2\n    ch := make(chan string, 2)\n\n    // отправляем два сообщения. блокировки не будет буффер вмещает\n    ch \u003c- \"first\"\n    fmt.Println(\"Sent first message\")\n    ch \u003c- \"second\"\n    fmt.Println(\"Sent second message\")\n\n    // При попытке отправить третье сообщение будет блок\n    // ch \u003c- \"third\"  // разкомментируй\n\n    // читаем из канала\n    fmt.Println(\u003c-ch)  // \"first\"\n    fmt.Println(\u003c-ch)  // \"second\"\n\n// Sent first message\n// Sent second message first second\n// Program exited.\n}"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Все три горутины запускаются конкурентно "
+					"Text": "тык"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "каждая останавливается на 2 секунды"
+					"Text": "если раскомментировать запись в канал получим ошибку "
 				},
 				{
 					"Type": "paragraph",
-					"Text": "порядок завершения может быть любой"
+					"Text": "В следующих публикациях рассмотрим:"
 				},
 				{
 					"Type": "paragraph",
-					"Text": "Main заходит в цикл for i := 0; i \u003c 3; i++"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Каждый \u003c-done (без отправителя) по сути блокировка для main "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "порядок завершения может быть любой"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "\u003c-done блокирует main если там нет данных, даже если main дойдет до цикла раньше горутин, дедлока не будет, горутина отправит в канал done сигнал, а main прочет и пойдет на следующую итерацию цикла"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Так повторится трижды "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Какая горутина прийдет первой или последней не имеет значения"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "⭐ Каждая запись (done \u003c- true) имеет ровно столько же чтений (\u003c-done)"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "⭐ Main синхронизируется с горутинами через цикл "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "маин инициализирует 3 канала"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "ch - для сообщений"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "senderDone - сигнал о завершении"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "receiverDone - сигнал о завершении"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "маин запускает 2 горутины"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "sender"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "receiver"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Маин блокируется и ждет сигналов о завершении"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "sender отправляет \"message 1\" в канал ch."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "receiver просыпается и обрабатывает сообщение: "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Выводит: \"Received: message 1\"."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель засыпает на 100 мс."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "sender просыпается и отправляет \"message 2\" в канал ch."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "receiver обрабатывает сообщение: "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Выводит: \"Received: message 2\"."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель снова засыпает на 100 мс."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "sender просыпается и отправляет \"message 3\" в канал ch."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "receiver обрабатывает сообщение: "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Выводит: \"Received: message 3\"."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель засыпает в последний раз."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель завершает сон и закрывает канал ch."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель отправляет сигнал true в канал senderDone, указывая на завершение работы."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Получатель обнаруживает, что канал ch закрыт."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Получатель выходит из цикла for-range."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "маин получает сигнал от senderDone и прекращает ожидание."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "маин блокируется до  сигнала от receiverDone."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Получатель отправляет сигнал о завершении в канал receiverDone."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "маин получает сигнал и выводит: "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "\"All operations completed!\"."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Программа завершается."
+					"Text": "📌 Следующий пост:"
 				},
 				{
 					"Type": "paragraph",
 					"Text": ""
-				},
-				{
-					"Type": "paragraph",
-					"Text": "FIFO (первый зашел первый вышел - очередь)"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Фиксированный размер, задается при создании"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Блокирует отправителя если канал (буфер) заполнен"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Блокирует получателя если канал пуст"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "буферизированный канал не блокирует отправителя пока не заполнится буфер."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Размер буфера определяет сколько сообщений поместится в канал до блокировки."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Буфер уже заполнен двумя сообщениями и без конкурентного чтения попытка записи в заполненный канал приведет к дедлоку на этапе компиляции(компилятор это заметит)"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Так как main читает из канала только дважды попытка записи в заполненный канал приведет к блоку"
-				},
-				{
-					"Type": "paragraph",
-					"Text": ""
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Буферизированный канал"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Канал без буфера"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Цель"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Чтобы не блокировать отправителя и получателя"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Чтобы блокировать(синхронизировать) отправителя и получателя"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Когда использовать"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель может продолжить работу не дожидаясь получателя"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Отправитель не может продолжить работу без получателя"
-				},
-				{
-					"Type": "paragraph",
-					"Text": ""
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Если буфер увеличивать пропускную способность"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Важно чтобы обработка сообщений происходила немедленно"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Блокирующее поведение"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Блокируется если буфер полон"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Блокируется отправитель пока принимающий не готов и наоборот "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Производительность"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Может увеличить производительность за счет уменьшения синхронизации"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Возможны задержки из-за синхронизации"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Примеры использования"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Логирование с ограничением скорости обработки"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Передача сигналов между горутинами."
-				},
-				{
-					"Type": "paragraph",
-					"Text": ""
-				},
-				{
-					"Type": "paragraph",
-					"Text": "пакетная обработка, когда сообщения ставятся в очередь"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "передача данных без задержек"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Сложность"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Требует внимательной настройки буфера из-за переполнения"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Все просто и понятно. "
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Накладные расходы"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Необходима доп память на буфер"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "доп память не нужна"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Модель конкурентности"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Асинхронное взаимодействие"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Строго синхронное выполнение"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Проблемные сценарии"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Дедлок при переполнении"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Дедлок при отсутствии отправителя/получателя"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Вам нужно развязать отправителя и получателя по времени."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Производительность может выиграть за счёт пакетной обработки или очередей сообщений."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Приложение может терпеть задержки в обработке сообщений, когда буфер заполнен."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Синхронизация между горутинами критически важна."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Вам нужна простота и немедленная передача данных."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Взаимодействие между отправителем и получателем должно происходить мгновенно."
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Паттерны конкурентности"
-				},
-				{
-					"Type": "paragraph",
-					"Text": "Мьютексы и синхронизация памяти"
 				}
 			]
 		},
 		{
-			"Title": "Claude удалил 700 ГБ из домашнего каталога во время проверки скрипта для предотвращения случайного удаления файлов",
-			"Blocks": [
-				{
-					"Type": "paragraph",
-					"Text": "Разработчик Себастьян Гийемо рассказал, что ИИ-ассистент Claude удалил 700 ГБ из домашнего каталога рабочего ПК во время тестирования скрипта для предотвращения случайного удаления файлов."
-				}
-			]
+			"Title": "Нейросети как дофаминовая яма для взрослых",
+			"Blocks": null
 		},
 		{
 			"Title": "Публикации",
@@ -495,5 +194,5 @@
 		}
 	],
 	"ImportedAt": "2026-08-15T21:08:58.230947312+03:00",
-	"UpdatedAt": "2026-08-31T01:21:13.968478875+03:00"
+	"UpdatedAt": "2026-09-01T00:20:40.928037278+03:00"
 }

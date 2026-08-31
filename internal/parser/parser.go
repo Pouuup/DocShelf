@@ -98,19 +98,28 @@ func extractBody(document *goquery.Document) (*goquery.Selection, error) {
 func parseSections(body *goquery.Selection) ([]models.Section, error) {
 	sections := []models.Section{}
 
-	selection := body.Find("h2").Each(func(i int, s *goquery.Selection) {
+	selection := body.Find("h2")
+	selection.Each(func(i int, s *goquery.Selection) {
 		section := models.Section{
 			Title: s.Text(),
 		}
-		elements := s.NextUntil("h2")
-		paragraphs := elements.Find("p")
 
-		paragraphs.Each(func(i int, p *goquery.Selection) {
-			block := models.Block{
-				Type: models.BlockParagraph,
-				Text: p.Text(),
+		elements := s.NextUntil("h2")
+		elements.Each(func(i int, p *goquery.Selection) {
+			var block models.Block
+			if p.Is("p") {
+				block = models.Block{
+					Type: models.BlockParagraph,
+					Text: p.Text(),
+				}
+				section.Blocks = append(section.Blocks, block)
+			} else if p.Is("pre") {
+				block = models.Block{
+					Type: models.BlockCode,
+					Text: p.Text(),
+				}
+				section.Blocks = append(section.Blocks, block)
 			}
-			section.Blocks = append(section.Blocks, block)
 
 		})
 
