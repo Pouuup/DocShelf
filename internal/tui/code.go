@@ -9,11 +9,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var codeStyle = lipgloss.NewStyle().
-	PaddingLeft(4)
-
 func renderCode(text string) []string {
 	var output strings.Builder
+
+	var codeStyle = lipgloss.NewStyle().
+		PaddingLeft(4).
+		Border(lipgloss.RoundedBorder())
 
 	lexer := lexers.Get("go")
 	iterator, err := lexer.Tokenise(nil, text)
@@ -30,12 +31,9 @@ func renderCode(text string) []string {
 		return nil
 	}
 
-	codeLines := strings.Split(output.String(), "\n")
+	formattedCode := codeStyle.Render(output.String())
+	totalLines := strings.Split(formattedCode, "\n")
 
-	for i, line := range codeLines {
-		codeLines[i] = codeStyle.Render(line)
-	}
-
-	return codeLines
+	return totalLines
 
 }
