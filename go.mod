@@ -1,4 +1,4 @@
-module github.com/Poup-puoP/DocShelf
+module github.com/Pouuup/DocShelf
 
 go 1.26.5
 

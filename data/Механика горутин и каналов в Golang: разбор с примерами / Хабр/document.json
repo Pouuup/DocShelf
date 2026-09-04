@@ -76,7 +76,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"sync\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, wg *sync.WaitGroup) {\n    // Сообщим wg о том что мы закончили перед выходом из функции\n    defer wg.Done()\n\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    var wg sync.WaitGroup\n\n    // Сообщим wg что мы собираемся запускать 3 горутины\n    wg.Add(3)\n\n    go downloadFile(\"file1.txt\", \u0026wg)\n    go downloadFile(\"file2.txt\", \u0026wg)\n    go downloadFile(\"file3.txt\", \u0026wg)\n\n    // Ждем завершения всех горутин\n    wg.Wait()\n\n    fmt.Println(\"All downloads completed!\")\n}\n\n// Starting downloads...\n// Starting download: file3.txt\n// Starting download: filel.txt\n// Starting download: file2.txt\n// Finished download: file3.txt\n// Finished download: filel.txt\n// Finished download: file2.txt\n// All downloads completed!\n// Program exited."
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"sync\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, wg *sync.WaitGroup) {\n    // Сообщим wg о том что мы закончили перед выходом из функции\n    defer wg.Done()\n\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    var wg sync.WaitGroup\n\n    // Сообщим wg что мы собираемся запускать 3 горутины\n    wg.Add(3)\n\n    go downloadFile(\"file1.txt\", &wg)\n    go downloadFile(\"file2.txt\", &wg)\n    go downloadFile(\"file3.txt\", &wg)\n\n    // Ждем завершения всех горутин\n    wg.Wait()\n\n    fmt.Println(\"All downloads completed!\")\n}\n\n// Starting downloads...\n// Starting download: file3.txt\n// Starting download: filel.txt\n// Starting download: file2.txt\n// Finished download: file3.txt\n// Finished download: filel.txt\n// Finished download: file2.txt\n// All downloads completed!\n// Program exited."
 				},
 				{
 					"Type": "paragraph",
@@ -96,7 +96,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    // создаем канал\n    ch := make(chan string)\n\n    // Отправляем данные в канал(main блокируется)\n    ch \u003c- \"hello\"  // тут deadlock!\n\n    // получение данных из канала\n    msg := \u003c-ch\n    fmt.Println(msg)\n}\n//fatal error: all goroutines are asleep - deadlock!\n//goroutine 1 [chan send]:\n//main.main ()\n// / tmp/sandbox364224576/prog.go: 10 +0x36\n//Program exited."
+					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    // создаем канал\n    ch := make(chan string)\n\n    // Отправляем данные в канал(main блокируется)\n    ch <- \"hello\"  // тут deadlock!\n\n    // получение данных из канала\n    msg := <-ch\n    fmt.Println(msg)\n}\n//fatal error: all goroutines are asleep - deadlock!\n//goroutine 1 [chan send]:\n//main.main ()\n// / tmp/sandbox364224576/prog.go: 10 +0x36\n//Program exited."
 				},
 				{
 					"Type": "paragraph",
@@ -104,7 +104,7 @@
 				},
 				{
 					"Type": "paragraph",
-					"Text": "почему произошел дедлок в ch \u003c- \"hello\" ? Поскольку каналы это механизмы блокировки/синхронизации запись в канал заблокирует выполнение main до тех пор пока другая горутина не прочтет из него, но другой горутины нет и мы заблокировались навсегда - deadlock. "
+					"Text": "почему произошел дедлок в ch <- \"hello\" ? Поскольку каналы это механизмы блокировки/синхронизации запись в канал заблокирует выполнение main до тех пор пока другая горутина не прочтет из него, но другой горутины нет и мы заблокировались навсегда - deadlock. "
 				},
 				{
 					"Type": "paragraph",
@@ -112,7 +112,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    ch := make(chan string)\n\n    // создадим горутину для записи в канал\n    go func() {\n        ch \u003c- \"hello\"  // в этот раз блокировки не будет main тоже горутина\n    }()\n\n    // main прочитает данные \n    msg := \u003c-ch  // блокировка до момента чтения\n    fmt.Println(msg)\n}"
+					"Text": "package main\n\nimport \"fmt\"\n\nfunc main() {\n    ch := make(chan string)\n\n    // создадим горутину для записи в канал\n    go func() {\n        ch <- \"hello\"  // в этот раз блокировки не будет main тоже горутина\n    }()\n\n    // main прочитает данные \n    msg := <-ch  // блокировка до момента чтения\n    fmt.Println(msg)\n}"
 				},
 				{
 					"Type": "paragraph",
@@ -128,7 +128,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, done chan bool) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n\n    done \u003c- true // отправляем сигнал о завершении\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    startTime := time.Now()\n\n    // создаем канал для отслеживания статуса горутин\n    done := make(chan bool)\n\n    go downloadFile(\"file1.txt\", done)\n    go downloadFile(\"file2.txt\", done)\n    go downloadFile(\"file3.txt\", done)\n\n    // Ждем пока все горутины сигнализируют о закрытии\n    for i := 0; i \u003c 3; i++ {\n        \u003c-done // Получаем сигнал от каждой завершенной горутины \n    }\n\n    elapsedTime := time.Since(startTime)\n    fmt.Printf(\"All downloads completed! Time elapsed: %s\\n\", elapsedTime)\n}\n\n//Starting downloads...\n//Starting download: file3.txt\n//Starting download: file2.txt\n//Starting download: filel.txt\n//Finished download: filel.txt\n//Finished download: file2.txt\n//Finished download: file3.txt\n//All downloads completed! Time elapsed: 2s\n//Program"
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc downloadFile(filename string, done chan bool) {\n    fmt.Printf(\"Starting download: %s\\n\", filename)\n    time.Sleep(2 * time.Second)\n    fmt.Printf(\"Finished download: %s\\n\", filename)\n\n    done <- true // отправляем сигнал о завершении\n}\n\nfunc main() {\n    fmt.Println(\"Starting downloads...\")\n\n    startTime := time.Now()\n\n    // создаем канал для отслеживания статуса горутин\n    done := make(chan bool)\n\n    go downloadFile(\"file1.txt\", done)\n    go downloadFile(\"file2.txt\", done)\n    go downloadFile(\"file3.txt\", done)\n\n    // Ждем пока все горутины сигнализируют о закрытии\n    for i := 0; i < 3; i++ {\n        <-done // Получаем сигнал от каждой завершенной горутины \n    }\n\n    elapsedTime := time.Since(startTime)\n    fmt.Printf(\"All downloads completed! Time elapsed: %s\\n\", elapsedTime)\n}\n\n//Starting downloads...\n//Starting download: file3.txt\n//Starting download: file2.txt\n//Starting download: filel.txt\n//Finished download: filel.txt\n//Finished download: file2.txt\n//Finished download: file3.txt\n//All downloads completed! Time elapsed: 2s\n//Program"
 				},
 				{
 					"Type": "paragraph",
@@ -148,7 +148,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc sender(ch chan string, done chan bool) {\n    for i := 1; i \u003c= 3; i++ {\n        ch \u003c- fmt.Sprintf(\"message %d\", i)\n        time.Sleep(100 * time.Millisecond)\n    }\n    close(ch) // Закрываем канал после завершения отправки\n    done \u003c- true\n}\n\nfunc receiver(ch chan string, done chan bool) {\n        // range позволяет читать канал пока он не закроется(главное его закрыть)\n    for msg := range ch {\n        fmt.Println(\"Received:\", msg)\n    }\n    done \u003c- true\n}\n\nfunc main() {\n    ch := make(chan string)\n    senderDone := make(chan bool)\n    receiverDone := make(chan bool)\n\n    go sender(ch, senderDone)\n    go receiver(ch, receiverDone)\n\n    // блокируемся до тех пор пока не отработают функции\n    \u003c-senderDone\n    \u003c-receiverDone\n\n    fmt.Println(\"All operations completed!\")\n}"
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc sender(ch chan string, done chan bool) {\n    for i := 1; i <= 3; i++ {\n        ch <- fmt.Sprintf(\"message %d\", i)\n        time.Sleep(100 * time.Millisecond)\n    }\n    close(ch) // Закрываем канал после завершения отправки\n    done <- true\n}\n\nfunc receiver(ch chan string, done chan bool) {\n        // range позволяет читать канал пока он не закроется(главное его закрыть)\n    for msg := range ch {\n        fmt.Println(\"Received:\", msg)\n    }\n    done <- true\n}\n\nfunc main() {\n    ch := make(chan string)\n    senderDone := make(chan bool)\n    receiverDone := make(chan bool)\n\n    go sender(ch, senderDone)\n    go receiver(ch, receiverDone)\n\n    // блокируемся до тех пор пока не отработают функции\n    <-senderDone\n    <-receiverDone\n\n    fmt.Println(\"All operations completed!\")\n}"
 				},
 				{
 					"Type": "paragraph",
@@ -160,7 +160,7 @@
 				},
 				{
 					"Type": "code",
-					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc main() {\n    // создали буфф канал вместимостью 2\n    ch := make(chan string, 2)\n\n    // отправляем два сообщения. блокировки не будет буффер вмещает\n    ch \u003c- \"first\"\n    fmt.Println(\"Sent first message\")\n    ch \u003c- \"second\"\n    fmt.Println(\"Sent second message\")\n\n    // При попытке отправить третье сообщение будет блок\n    // ch \u003c- \"third\"  // разкомментируй\n\n    // читаем из канала\n    fmt.Println(\u003c-ch)  // \"first\"\n    fmt.Println(\u003c-ch)  // \"second\"\n\n// Sent first message\n// Sent second message first second\n// Program exited.\n}"
+					"Text": "package main\n\nimport (\n    \"fmt\"\n    \"time\"\n)\n\nfunc main() {\n    // создали буфф канал вместимостью 2\n    ch := make(chan string, 2)\n\n    // отправляем два сообщения. блокировки не будет буффер вмещает\n    ch <- \"first\"\n    fmt.Println(\"Sent first message\")\n    ch <- \"second\"\n    fmt.Println(\"Sent second message\")\n\n    // При попытке отправить третье сообщение будет блок\n    // ch <- \"third\"  // разкомментируй\n\n    // читаем из канала\n    fmt.Println(<-ch)  // \"first\"\n    fmt.Println(<-ch)  // \"second\"\n\n// Sent first message\n// Sent second message first second\n// Program exited.\n}"
 				},
 				{
 					"Type": "paragraph",
@@ -185,14 +185,14 @@
 			]
 		},
 		{
-			"Title": "Vodka, или как мы планируем заменить Wine",
-			"Blocks": null
+			"Title": "Россиянам стал доступен цифровой рубль. Главное",
+			"Blocks": []
 		},
 		{
 			"Title": "Публикации",
-			"Blocks": null
+			"Blocks": []
 		}
 	],
-	"ImportedAt": "2026-09-01T22:14:27.753925464+03:00",
-	"UpdatedAt": "2026-09-01T22:51:44.361056256+03:00"
+	"ImportedAt": "2026-09-01T23:01:18.532049258+03:00",
+	"UpdatedAt": "2026-09-02T21:31:44.971639731+03:00"
 }

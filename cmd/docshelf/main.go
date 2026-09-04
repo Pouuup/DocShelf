@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 
-	"github.com/Poup-puoP/DocShelf/internal/app"
-	"github.com/Poup-puoP/DocShelf/internal/parser"
-	"github.com/Poup-puoP/DocShelf/internal/tui"
+	"github.com/Pouuup/DocShelf/internal/app"
+	"github.com/Pouuup/DocShelf/internal/tui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -15,19 +15,24 @@ func main() {
 	pathStorage := "data"
 
 	fmt.Println("Enter the link:")
-	fmt.Scanln(&url)
-	err := app.ImportDocument(url, pathStorage)
-	if err != nil {
-		fmt.Println(err)
-	} /*else {
-		fmt.Println("Document was successfully imported")
-	}*/
 
-	document, err := parser.ParseDocument(url)
-	if err != nil {
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		url = scanner.Text()
+	}
+
+	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
 		return
 	}
+
+	document, err := app.ImportDocument(url, pathStorage)
+	if err != nil {
+		fmt.Println(err)
+		return
+	} /*else {
+		fmt.Println("Document was successfully imported")
+	}*/
 
 	m := tui.NewModel(document)
 

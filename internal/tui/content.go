@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/Poup-puoP/DocShelf/internal/models"
+	"github.com/Pouuup/DocShelf/internal/models"
 )
 
 func (m model) contentLines() []string {

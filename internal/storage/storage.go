@@ -1,7 +1,8 @@
 package storage
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -9,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Poup-puoP/DocShelf/internal/models"
+	"github.com/Pouuup/DocShelf/internal/models"
 )
 
 func Save(document *models.Document, pathStorage string, pathDirDoc string) error {
@@ -18,7 +19,7 @@ func Save(document *models.Document, pathStorage string, pathDirDoc string) erro
 	}
 	exist, err := ExistsByURL(pathStorage, document.SourceURL)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
 
 	if exist {
@@ -27,20 +28,24 @@ func Save(document *models.Document, pathStorage string, pathDirDoc string) erro
 
 	err = os.MkdirAll(pathDirDoc, 0755)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
 
 	pathDocument := filepath.Join(pathDirDoc, "document.json")
 	file, err := os.Create(pathDocument)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
 	defer file.Close()
 
-	b, err := json.MarshalIndent(document, "", "	")
+	b, err := json.Marshal(document)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
+
+	v := jsontext.Value(b)
+	v.Indent()
+	b = v
 
 	_, err = file.Write(b)
 	if err != nil {
@@ -56,24 +61,24 @@ func ExistsByURL(pathDir string, url string) (bool, error) {
 
 	err := filepath.WalkDir(pathDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("error:%w", err)
+			return err
 		}
 
 		if !d.IsDir() && filepath.Ext(path) == ".json" {
 			file, err := os.Open(path)
 			if err != nil {
-				return fmt.Errorf("error:%w", err)
+				return err
 			}
 
 			var doc struct {
 				URL string `json:"SourceURL"`
 			}
 
-			err = json.NewDecoder(file).Decode(&doc)
+			err = json.UnmarshalRead(file, &doc)
 			file.Close()
 
 			if err != nil {
-				return fmt.Errorf("error:%w", err)
+				return err
 			}
 
 			if doc.URL == url {
@@ -96,38 +101,36 @@ func Update(document *models.Document, pathStorage string, pathDirDoc string) er
 		return fmt.Errorf("error: the document is empty")
 	}
 
-	exist, err := ExistsByURL(pathStorage, document.SourceURL)
-	if err != nil {
-		return fmt.Errorf("%w", err)
-	}
-
-	if !exist {
-		return nil
-	}
 	doc := filepath.Join(pathDirDoc, "document.json")
 
 	data, err := os.ReadFile(doc)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 
 	var oldDocument models.Document
 
 	err = json.Unmarshal(data, &oldDocument)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 
 	document.ImportedAt = oldDocument.ImportedAt
 	document.UpdatedAt = time.Now()
 
-	str, err := json.MarshalIndent(document, "", "	")
+	str, err := json.Marshal(document)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
+
+	v := jsontext.Value(str)
+	v.Indent()
+
+	str = v
+
 	err = os.WriteFile(doc, str, 0644)
 	if err != nil {
-		return fmt.Errorf("%w", err)
+		return err
 	}
 
 	return nil
@@ -142,13 +145,13 @@ func Load(pathDocument string) (models.Document, error) {
 
 	file, err := os.Open(pathDocument)
 	if err != nil {
-		return document, fmt.Errorf("error:%w", err)
+		return document, err
 	}
 	defer file.Close()
 
-	err = json.NewDecoder(file).Decode(&document)
+	err = json.UnmarshalRead(file, &document)
 	if err != nil {
-		return document, fmt.Errorf("error:%w", err)
+		return document, err
 	}
 	return document, nil
 
@@ -163,7 +166,7 @@ func Delete(pathDir string) error {
 
 	info, err := os.Stat(pathDir)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
 
 	if !info.IsDir() {
@@ -172,7 +175,7 @@ func Delete(pathDir string) error {
 
 	err = os.RemoveAll(pathDir)
 	if err != nil {
-		return fmt.Errorf("error:%w", err)
+		return err
 	}
 
 	return nil
@@ -187,7 +190,7 @@ func List(pathDir string) ([]models.Document, error) {
 
 	info, err := os.Stat(pathDir)
 	if err != nil {
-		return documents, fmt.Errorf("error:%w", err)
+		return documents, err
 	}
 
 	if !info.IsDir() {
@@ -196,21 +199,21 @@ func List(pathDir string) ([]models.Document, error) {
 
 	err = filepath.WalkDir(pathDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("error:%w", err)
+			return err
 		}
 
 		if !d.IsDir() && filepath.Ext(path) == ".json" {
 			file, err := os.Open(path)
 			if err != nil {
-				return fmt.Errorf("error:%w", err)
+				return err
 			}
 			defer file.Close()
 
 			var doc models.Document
 
-			err = json.NewDecoder(file).Decode(&doc)
+			err = json.UnmarshalRead(file, &doc)
 			if err != nil {
-				return fmt.Errorf("error:%w", err)
+				return err
 			}
 
 			documents = append(documents, doc)
@@ -220,7 +223,7 @@ func List(pathDir string) ([]models.Document, error) {
 	})
 
 	if err != nil {
-		return documents, fmt.Errorf("error:%w", err)
+		return documents, err
 	}
 
 	return documents, nil

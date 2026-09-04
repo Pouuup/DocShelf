@@ -7,34 +7,34 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Poup-puoP/DocShelf/internal/models"
+	"github.com/Pouuup/DocShelf/internal/models"
 	"github.com/PuerkitoBio/goquery"
 )
 
 func ParseDocument(url string) (models.Document, error) {
 	htmlData, err := downloadHTML(url)
 	if err != nil {
-		return models.Document{}, fmt.Errorf("%w", err)
+		return models.Document{}, err
 	}
 
 	documents, err := parseHTML(htmlData)
 	if err != nil {
-		return models.Document{}, fmt.Errorf("%w", err)
+		return models.Document{}, err
 	}
 
 	title, err := extractTitle(documents)
 	if err != nil {
-		return models.Document{}, fmt.Errorf("%w", err)
+		return models.Document{}, err
 	}
 
 	body, err := extractBody(documents)
 	if err != nil {
-		return models.Document{}, fmt.Errorf("%w", err)
+		return models.Document{}, err
 	}
 
 	sections, err := parseSections(body)
 	if err != nil {
-		return models.Document{}, fmt.Errorf("%w", err)
+		return models.Document{}, err
 	}
 
 	document := models.Document{
@@ -61,7 +61,7 @@ func downloadHTML(url string) ([]byte, error) {
 
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("GET %s: %w", url, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 

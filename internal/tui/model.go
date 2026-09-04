@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/Poup-puoP/DocShelf/internal/models"
+import "github.com/Pouuup/DocShelf/internal/models"
 
 type model struct {
 	document       models.Document // Current document
